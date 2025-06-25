@@ -1,0 +1,19 @@
+User-agent: *
+Allow: /
+
+# Sitemaps
+Sitemap: /sitemap.xml
+
+# Disallow admin areas
+Disallow: /admin/
+Disallow: /api/
+
+# Allow important pages
+Allow: /
+Allow: /irs-mileage-calculator-2025
+Allow: /blog
+Allow: /faq
+Allow: /about
+Allow: /contact
+Allow: /mileage-rates-history
+Allow: /mileage-log-generator
