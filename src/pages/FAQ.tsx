@@ -39,6 +39,14 @@ const faqData: FAQItem[] = [
   {
     question: "What if I use my vehicle for both business and personal use?",
     answer: "You can only deduct the business portion of your vehicle use. Keep detailed records separating business miles from personal miles. Only the business miles qualify for the mileage deduction."
+  },
+  {
+    question: "Are there any limits on mileage deductions?",
+    answer: "There are no specific limits on the amount of mileage you can deduct, but the IRS requires that all deductions be reasonable and properly documented. Excessive claims may trigger an audit."
+  },
+  {
+    question: "Can I deduct mileage for multiple vehicles?",
+    answer: "Yes, you can deduct mileage for multiple vehicles used for business purposes. However, you must maintain separate records for each vehicle and choose either the mileage method or actual expense method for each vehicle consistently."
   }
 ];
 
@@ -53,11 +61,26 @@ export default function FAQ() {
     );
   };
 
+  const faqSchema = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": faqData.map(item => ({
+      "@type": "Question",
+      "name": item.question,
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": item.answer
+      }
+    }))
+  };
+
   return (
     <>
       <SEOHead 
-        title="FAQ - IRS Mileage Calculator"
-        description="Frequently asked questions about IRS mileage rates, deductions, and how to use our mileage calculator."
+        title="FAQ - IRS Mileage Calculator 2025"
+        description="Frequently asked questions about IRS mileage rates, deductions, and how to use our mileage calculator for 2025 tax season."
+        keywords="IRS mileage FAQ, mileage deduction questions, business mileage help, tax calculator FAQ"
+        schema={faqSchema}
       />
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -66,7 +89,7 @@ export default function FAQ() {
               Frequently Asked Questions
             </h1>
             <p className="text-xl text-gray-600">
-              Get answers to common questions about IRS mileage rates and deductions
+              Get answers to common questions about IRS mileage rates and deductions for 2025
             </p>
           </div>
 
@@ -104,7 +127,7 @@ export default function FAQ() {
               Still have questions?
             </h2>
             <p className="text-gray-600 mb-6">
-              Can't find the answer you're looking for? We're here to help.
+              Can't find the answer you're looking for? We're here to help with your mileage deduction questions.
             </p>
             <a
               href="/contact"

@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Calculator as CalcIcon, Download, Mail } from 'lucide-react';
+import { Calculator as CalcIcon, Download, Mail, Send } from 'lucide-react';
 import { jsPDF } from 'jspdf';
+import { sendEmail, generateCalculationEmail } from '../components/EmailService';
 import SEOHead from '../components/SEOHead';
 
 interface MileageData {
   businessMiles: number;
   medicalMiles: number;
   charityMiles: number;
+  movingMiles: number;
 }
 
 export default function Calculator() {
@@ -14,19 +16,26 @@ export default function Calculator() {
     businessMiles: 0,
     medicalMiles: 0,
     charityMiles: 0,
+    movingMiles: 0,
   });
+  
+  const [email, setEmail] = useState('');
+  const [emailSent, setEmailSent] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   // 2025 IRS Rates
   const rates = {
     business: 0.70,
     medical: 0.21,
     charity: 0.14,
+    moving: 0.21, // Same as medical for 2025
   };
 
   const businessDeduction = mileageData.businessMiles * rates.business;
   const medicalDeduction = mileageData.medicalMiles * rates.medical;
   const charityDeduction = mileageData.charityMiles * rates.charity;
-  const totalDeduction = businessDeduction + medicalDeduction + charityDeduction;
+  const movingDeduction = mileageData.movingMiles * rates.moving;
+  const totalDeduction = businessDeduction + medicalDeduction + charityDeduction + movingDeduction;
 
   const handleInputChange = (field: keyof MileageData, value: string) => {
     const numValue = parseFloat(value) || 0;
@@ -39,20 +48,28 @@ export default function Calculator() {
   const generatePDF = () => {
     const doc = new jsPDF();
     
-    // Title
+    // Header
     doc.setFontSize(20);
+    doc.setTextColor(37, 99, 235); // Blue color
     doc.text('IRS Mileage Deduction Calculation - 2025', 20, 30);
     
     // Date
     doc.setFontSize(12);
+    doc.setTextColor(0, 0, 0);
     doc.text(`Generated on: ${new Date().toLocaleDateString()}`, 20, 45);
     
+    // Add logo/branding
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text('irs2025mileagecalculator.com', 20, 55);
+    
     // Results
-    doc.setFontSize(14);
-    doc.text('Mileage Summary:', 20, 65);
+    doc.setFontSize(16);
+    doc.setTextColor(0, 0, 0);
+    doc.text('Mileage Deduction Summary:', 20, 75);
     
     doc.setFontSize(12);
-    let yPos = 80;
+    let yPos = 90;
     
     if (mileageData.businessMiles > 0) {
       doc.text(`Business Miles: ${mileageData.businessMiles} @ $${rates.business}/mile = $${businessDeduction.toFixed(2)}`, 20, yPos);
@@ -69,82 +86,116 @@ export default function Calculator() {
       yPos += 15;
     }
     
-    // Total
-    yPos += 10;
-    doc.setFontSize(14);
-    doc.text(`Total Deduction: $${totalDeduction.toFixed(2)}`, 20, yPos);
-    
-    // Disclaimer
-    yPos += 30;
-    doc.setFontSize(10);
-    doc.text('Disclaimer: This calculation is for informational purposes only.', 20, yPos);
-    doc.text('Please consult with a tax professional for specific tax advice.', 20, yPos + 10);
-    
-    doc.save('mileage-deduction-calculation.pdf');
-  };
-
-  const saveToLocalStorage = () => {
-    const calculationData = {
-      ...mileageData,
-      businessDeduction,
-      medicalDeduction,
-      charityDeduction,
-      totalDeduction,
-      timestamp: new Date().toISOString(),
-    };
-    
-    const existingData = localStorage.getItem('mileageCalculations');
-    const calculations = existingData ? JSON.parse(existingData) : [];
-    calculations.unshift(calculationData);
-    
-    // Keep only last 10 calculations
-    if (calculations.length > 10) {
-      calculations.splice(10);
+    if (mileageData.movingMiles > 0) {
+      doc.text(`Moving Miles: ${mileageData.movingMiles} @ $${rates.moving}/mile = $${movingDeduction.toFixed(2)}`, 20, yPos);
+      yPos += 15;
     }
     
-    localStorage.setItem('mileageCalculations', JSON.stringify(calculations));
-    alert('Calculation saved to your recent calculations!');
+    // Total
+    yPos += 10;
+    doc.setFontSize(16);
+    doc.setTextColor(37, 99, 235);
+    doc.text(`Total Deduction: $${totalDeduction.toFixed(2)}`, 20, yPos);
+    
+    // IRS Rates Table
+    yPos += 30;
+    doc.setFontSize(14);
+    doc.setTextColor(0, 0, 0);
+    doc.text('2025 IRS Mileage Rates:', 20, yPos);
+    
+    yPos += 15;
+    doc.setFontSize(10);
+    doc.text('Business Use: $0.70 per mile', 20, yPos);
+    doc.text('Medical/Moving: $0.21 per mile', 20, yPos + 10);
+    doc.text('Charitable: $0.14 per mile', 20, yPos + 20);
+    
+    // Disclaimer
+    yPos += 40;
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text('DISCLAIMER:', 20, yPos);
+    doc.text('This calculation is for informational purposes only and does not constitute', 20, yPos + 10);
+    doc.text('legal or financial advice. Please consult with a qualified tax professional', 20, yPos + 20);
+    doc.text('for advice regarding your specific tax situation.', 20, yPos + 30);
+    
+    // Footer
+    doc.text('Generated by IRS Mileage Calculator 2025 - irs2025mileagecalculator.com', 20, yPos + 50);
+    
+    doc.save('irs-mileage-deduction-2025.pdf');
+  };
+
+  const handleSendEmail = async () => {
+    if (!email || totalDeduction === 0) return;
+    
+    setLoading(true);
+    try {
+      const emailData = {
+        to: email,
+        subject: 'Your IRS Mileage Deduction Calculation - 2025',
+        html: generateCalculationEmail({
+          ...mileageData,
+          businessDeduction,
+          medicalDeduction,
+          charityDeduction,
+          movingDeduction,
+          totalDeduction
+        }),
+        type: 'calculation' as const
+      };
+      
+      const result = await sendEmail(emailData);
+      if (result.success) {
+        setEmailSent(true);
+        setTimeout(() => setEmailSent(false), 5000);
+      }
+    } catch (error) {
+      console.error('Failed to send email:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const schema = {
     "@context": "https://schema.org",
     "@type": "Calculator",
     "name": "IRS Mileage Deduction Calculator 2025",
-    "description": "Calculate tax deductions for business, medical, and charity mileage using official IRS rates",
-    "url": window.location.href
+    "description": "Calculate tax deductions for business, medical, charity, and moving mileage using official IRS rates",
+    "url": window.location.href,
+    "applicationCategory": "FinanceApplication",
+    "operatingSystem": "Web Browser"
   };
 
   return (
     <>
       <SEOHead
         title="IRS Mileage Deduction Calculator 2025 – Free Tax Calculator"
-        description="Calculate your IRS mileage deductions for business, medical, and charity miles. Free calculator using official 2025 IRS rates."
-        keywords="IRS mileage deduction calculator, business mileage calculator, medical miles deduction, charity mileage, 2025 tax calculator"
+        description="Calculate your IRS mileage deductions for business, medical, charity, and moving miles. Free calculator using official 2025 IRS rates."
+        keywords="IRS mileage deduction calculator, business mileage calculator, medical miles deduction, charity mileage, moving expenses, 2025 tax calculator"
         schema={schema}
       />
 
       <div className="min-h-screen bg-gray-50 py-12">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Header */}
           <div className="text-center mb-12">
             <CalcIcon className="h-16 w-16 text-blue-600 mx-auto mb-4" />
             <h1 className="text-4xl font-bold text-gray-900 mb-4">
               IRS Mileage Calculator 2025
             </h1>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
               Calculate your mileage deductions using the official IRS rates for 2025. 
-              Enter your miles for business, medical, and charity purposes.
+              Enter your miles for business, medical, charity, and moving purposes.
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Input Form */}
-            <div className="bg-white rounded-lg shadow-sm p-8">
+            <div className="lg:col-span-2 bg-white rounded-lg shadow-sm p-8">
               <h2 className="text-2xl font-semibold text-gray-900 mb-6">
                 Enter Your Mileage
               </h2>
               
-              <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Business Miles */}
                 <div>
                   <label htmlFor="businessMiles" className="block text-sm font-medium text-gray-700 mb-2">
@@ -219,7 +270,69 @@ export default function Calculator() {
                     Miles driven for charitable organizations, volunteer work
                   </p>
                 </div>
+
+                {/* Moving Miles */}
+                <div>
+                  <label htmlFor="movingMiles" className="block text-sm font-medium text-gray-700 mb-2">
+                    Moving Miles
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="number"
+                      id="movingMiles"
+                      min="0"
+                      step="0.1"
+                      value={mileageData.movingMiles || ''}
+                      onChange={(e) => handleInputChange('movingMiles', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-transparent"
+                      placeholder="Enter moving miles"
+                    />
+                    <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                      <span className="text-gray-500 text-sm">@ $0.21/mile</span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Miles driven for qualified moving expenses
+                  </p>
+                </div>
               </div>
+
+              {/* Email Section */}
+              {totalDeduction > 0 && (
+                <div className="mt-8 p-6 bg-blue-50 rounded-lg">
+                  <h3 className="text-lg font-semibold text-blue-900 mb-4">
+                    Email Your Results
+                  </h3>
+                  <div className="flex gap-3">
+                    <input
+                      type="email"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      placeholder="Enter your email address"
+                      className="flex-1 px-4 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                    <button
+                      onClick={handleSendEmail}
+                      disabled={!email || loading}
+                      className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center"
+                    >
+                      {loading ? (
+                        'Sending...'
+                      ) : (
+                        <>
+                          <Send className="h-4 w-4 mr-2" />
+                          Send
+                        </>
+                      )}
+                    </button>
+                  </div>
+                  {emailSent && (
+                    <p className="text-green-600 text-sm mt-2">
+                      ✓ Email sent successfully!
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Results */}
@@ -265,6 +378,18 @@ export default function Calculator() {
                   </div>
                 )}
 
+                {mileageData.movingMiles > 0 && (
+                  <div className="flex justify-between items-center p-4 bg-orange-50 rounded-lg">
+                    <div>
+                      <p className="font-medium text-gray-900">Moving Deduction</p>
+                      <p className="text-sm text-gray-600">{mileageData.movingMiles} miles × $0.21</p>
+                    </div>
+                    <p className="text-2xl font-bold text-orange-600">
+                      ${movingDeduction.toFixed(2)}
+                    </p>
+                  </div>
+                )}
+
                 <div className="border-t pt-4">
                   <div className="flex justify-between items-center p-4 bg-gray-100 rounded-lg">
                     <div>
@@ -280,22 +405,35 @@ export default function Calculator() {
 
               {/* Action Buttons */}
               {totalDeduction > 0 && (
-                <div className="flex flex-col sm:flex-row gap-3">
+                <div className="space-y-3">
                   <button
                     onClick={generatePDF}
-                    className="flex-1 bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
+                    className="w-full bg-blue-600 text-white px-4 py-3 rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center"
                   >
                     <Download className="h-5 w-5 mr-2" />
-                    Download PDF
-                  </button>
-                  <button
-                    onClick={saveToLocalStorage}
-                    className="flex-1 bg-gray-600 text-white px-4 py-3 rounded-lg hover:bg-gray-700 transition-colors"
-                  >
-                    Save Calculation
+                    Download PDF Report
                   </button>
                 </div>
               )}
+
+              {/* 2025 Rates Reference */}
+              <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-semibold text-gray-900 mb-2">2025 IRS Rates</h4>
+                <div className="text-sm text-gray-600 space-y-1">
+                  <div className="flex justify-between">
+                    <span>Business:</span>
+                    <span>$0.70/mile</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Medical/Moving:</span>
+                    <span>$0.21/mile</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Charitable:</span>
+                    <span>$0.14/mile</span>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

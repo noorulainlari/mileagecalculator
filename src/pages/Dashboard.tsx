@@ -1,53 +1,166 @@
 import React, { useState, useEffect } from 'react';
-import { Car, Calculator, FileText, TrendingUp, Plus, Calendar } from 'lucide-react';
+import { Car, Calculator, FileText, TrendingUp, Plus, Calendar, Bell, Settings } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
+import NewsletterSignup from '../components/NewsletterSignup';
 import SEOHead from '../components/SEOHead';
 
 interface MileageRecord {
   id: string;
   date: string;
-  miles: number;
-  purpose: string;
-  deduction: number;
+  total_miles: number;
+  business_purpose: string;
+  start_location: string;
+  end_location: string;
+}
+
+interface Reminder {
+  id: string;
+  frequency: string;
+  custom_date: string | null;
+  active: boolean;
 }
 
 export default function Dashboard() {
   const { user } = useAuth();
   const [records, setRecords] = useState<MileageRecord[]>([]);
+  const [reminders, setReminders] = useState<Reminder[]>([]);
   const [newRecord, setNewRecord] = useState({
     date: new Date().toISOString().split('T')[0],
     miles: '',
-    purpose: ''
+    purpose: '',
+    startLocation: '',
+    endLocation: ''
   });
+  const [reminderFrequency, setReminderFrequency] = useState('weekly');
+  const [customDate, setCustomDate] = useState('');
 
   const currentRate = 0.70; // 2025 business rate
 
-  const addRecord = () => {
-    if (!newRecord.miles || !newRecord.purpose) return;
+  useEffect(() => {
+    if (user) {
+      loadUserData();
+    }
+  }, [user]);
 
-    const miles = parseFloat(newRecord.miles);
-    const record: MileageRecord = {
-      id: Date.now().toString(),
-      date: newRecord.date,
-      miles,
-      purpose: newRecord.purpose,
-      deduction: miles * currentRate
-    };
+  const loadUserData = async () => {
+    if (!user) return;
 
-    setRecords([record, ...records]);
-    setNewRecord({
-      date: new Date().toISOString().split('T')[0],
-      miles: '',
-      purpose: ''
-    });
+    try {
+      // Load mileage records
+      const { data: mileageData } = await supabase
+        .from('mileage_logs')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('date', { ascending: false })
+        .limit(10);
+
+      if (mileageData) {
+        setRecords(mileageData);
+      }
+
+      // Load reminders
+      const { data: reminderData } = await supabase
+        .from('reminders')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (reminderData) {
+        setReminders(reminderData);
+      }
+    } catch (error) {
+      console.error('Error loading user data:', error);
+    }
   };
 
-  const totalMiles = records.reduce((sum, record) => sum + record.miles, 0);
-  const totalDeduction = records.reduce((sum, record) => sum + record.deduction, 0);
+  const addRecord = async () => {
+    if (!newRecord.miles || !newRecord.purpose || !user) return;
+
+    try {
+      const miles = parseFloat(newRecord.miles);
+      const recordData = {
+        user_id: user.id,
+        date: newRecord.date,
+        total_miles: miles,
+        business_purpose: newRecord.purpose,
+        start_location: newRecord.startLocation || 'Not specified',
+        end_location: newRecord.endLocation || 'Not specified',
+        start_odometer: '0',
+        end_odometer: miles.toString(),
+        country: 'United States'
+      };
+
+      const { data, error } = await supabase
+        .from('mileage_logs')
+        .insert([recordData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setRecords([data, ...records]);
+      setNewRecord({
+        date: new Date().toISOString().split('T')[0],
+        miles: '',
+        purpose: '',
+        startLocation: '',
+        endLocation: ''
+      });
+    } catch (error) {
+      console.error('Error adding record:', error);
+    }
+  };
+
+  const addReminder = async () => {
+    if (!user) return;
+
+    try {
+      const reminderData = {
+        user_id: user.id,
+        frequency: reminderFrequency,
+        custom_date: reminderFrequency === 'custom' ? customDate : null,
+        active: true
+      };
+
+      const { data, error } = await supabase
+        .from('reminders')
+        .insert([reminderData])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      setReminders([...reminders, data]);
+      setReminderFrequency('weekly');
+      setCustomDate('');
+    } catch (error) {
+      console.error('Error adding reminder:', error);
+    }
+  };
+
+  const toggleReminder = async (id: string, active: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('reminders')
+        .update({ active })
+        .eq('id', id);
+
+      if (error) throw error;
+
+      setReminders(reminders.map(r => 
+        r.id === id ? { ...r, active } : r
+      ));
+    } catch (error) {
+      console.error('Error updating reminder:', error);
+    }
+  };
+
+  const totalMiles = records.reduce((sum, record) => sum + record.total_miles, 0);
+  const totalDeduction = totalMiles * currentRate;
   const thisMonthRecords = records.filter(record => 
     new Date(record.date).getMonth() === new Date().getMonth()
   );
-  const thisMonthMiles = thisMonthRecords.reduce((sum, record) => sum + record.miles, 0);
+  const thisMonthMiles = thisMonthRecords.reduce((sum, record) => sum + record.total_miles, 0);
 
   return (
     <>
@@ -120,7 +233,7 @@ export default function Dashboard() {
           <div className="grid lg:grid-cols-3 gap-8">
             {/* Add New Record */}
             <div className="lg:col-span-1">
-              <div className="bg-white rounded-2xl shadow-xl p-6">
+              <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
                 <h2 className="text-xl font-bold text-gray-900 mb-6">Add Mileage Record</h2>
                 
                 <div className="space-y-4">
@@ -163,6 +276,32 @@ export default function Dashboard() {
                     />
                   </div>
 
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Start Location
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Office, home, etc."
+                      value={newRecord.startLocation}
+                      onChange={(e) => setNewRecord({...newRecord, startLocation: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      End Location
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="Client office, venue, etc."
+                      value={newRecord.endLocation}
+                      onChange={(e) => setNewRecord({...newRecord, endLocation: e.target.value})}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    />
+                  </div>
+
                   {newRecord.miles && (
                     <div className="p-4 bg-blue-50 rounded-lg">
                       <p className="text-sm text-blue-800">
@@ -182,18 +321,91 @@ export default function Dashboard() {
                   </button>
                 </div>
               </div>
+
+              {/* Email Reminders */}
+              <div className="bg-white rounded-2xl shadow-xl p-6">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">
+                  <Bell className="h-5 w-5 inline mr-2" />
+                  Email Reminders
+                </h3>
+                
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      Frequency
+                    </label>
+                    <select
+                      value={reminderFrequency}
+                      onChange={(e) => setReminderFrequency(e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    >
+                      <option value="weekly">Weekly</option>
+                      <option value="monthly">Monthly</option>
+                      <option value="quarterly">Quarterly</option>
+                      <option value="custom">Custom Date</option>
+                    </select>
+                  </div>
+
+                  {reminderFrequency === 'custom' && (
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        Custom Date
+                      </label>
+                      <input
+                        type="date"
+                        value={customDate}
+                        onChange={(e) => setCustomDate(e.target.value)}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      />
+                    </div>
+                  )}
+
+                  <button
+                    onClick={addReminder}
+                    className="w-full px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                  >
+                    Add Reminder
+                  </button>
+                </div>
+
+                {/* Active Reminders */}
+                {reminders.length > 0 && (
+                  <div className="mt-6">
+                    <h4 className="font-semibold text-gray-900 mb-3">Active Reminders</h4>
+                    <div className="space-y-2">
+                      {reminders.map((reminder) => (
+                        <div key={reminder.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                          <span className="text-sm text-gray-700 capitalize">
+                            {reminder.frequency}
+                            {reminder.custom_date && ` - ${new Date(reminder.custom_date).toLocaleDateString()}`}
+                          </span>
+                          <label className="relative inline-flex items-center cursor-pointer">
+                            <input
+                              type="checkbox"
+                              checked={reminder.active}
+                              onChange={(e) => toggleReminder(reminder.id, e.target.checked)}
+                              className="sr-only peer"
+                            />
+                            <div className="w-9 h-5 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-blue-600"></div>
+                          </label>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             {/* Recent Records */}
             <div className="lg:col-span-2">
-              <div className="bg-white rounded-2xl shadow-xl p-6">
+              <div className="bg-white rounded-2xl shadow-xl p-6 mb-6">
                 <div className="flex items-center justify-between mb-6">
                   <h2 className="text-xl font-bold text-gray-900">Recent Records</h2>
                   <a
                     href="/mileage-log-generator"
                     className="text-blue-600 hover:text-blue-700 font-medium transition-colors duration-200"
                   >
-                    Export All
+                    View All & Export
                   </a>
                 </div>
 
@@ -210,6 +422,7 @@ export default function Dashboard() {
                         <tr className="border-b border-gray-200">
                           <th className="text-left py-3 text-sm font-medium text-gray-600">Date</th>
                           <th className="text-left py-3 text-sm font-medium text-gray-600">Purpose</th>
+                          <th className="text-left py-3 text-sm font-medium text-gray-600">Route</th>
                           <th className="text-right py-3 text-sm font-medium text-gray-600">Miles</th>
                           <th className="text-right py-3 text-sm font-medium text-gray-600">Deduction</th>
                         </tr>
@@ -220,12 +433,15 @@ export default function Dashboard() {
                             <td className="py-3 text-sm text-gray-900">
                               {new Date(record.date).toLocaleDateString()}
                             </td>
-                            <td className="py-3 text-sm text-gray-900">{record.purpose}</td>
+                            <td className="py-3 text-sm text-gray-900">{record.business_purpose}</td>
+                            <td className="py-3 text-sm text-gray-600">
+                              {record.start_location} → {record.end_location}
+                            </td>
                             <td className="py-3 text-sm text-gray-900 text-right">
-                              {record.miles.toFixed(1)}
+                              {record.total_miles.toFixed(1)}
                             </td>
                             <td className="py-3 text-sm font-medium text-gray-900 text-right">
-                              ${record.deduction.toFixed(2)}
+                              ${(record.total_miles * currentRate).toFixed(2)}
                             </td>
                           </tr>
                         ))}
@@ -234,6 +450,9 @@ export default function Dashboard() {
                   </div>
                 )}
               </div>
+
+              {/* Newsletter Signup */}
+              <NewsletterSignup />
             </div>
           </div>
 

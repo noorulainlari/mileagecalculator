@@ -1,0 +1,2 @@
+# Ads.txt file for irs2025mileagecalculator.com
+# This file will be managed through the admin panel

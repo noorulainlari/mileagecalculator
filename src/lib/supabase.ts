@@ -57,21 +57,88 @@ export type Database = {
           created_at?: string;
         };
       };
-      settings: {
+      admin_settings: {
         Row: {
           key: string;
           value: string;
+          enabled: boolean;
           updated_at: string;
         };
         Insert: {
           key: string;
           value: string;
+          enabled?: boolean;
           updated_at?: string;
         };
         Update: {
           key?: string;
           value?: string;
+          enabled?: boolean;
           updated_at?: string;
+        };
+      };
+      email_logs: {
+        Row: {
+          id: string;
+          recipient: string;
+          subject: string;
+          type: string;
+          sent_at: string;
+        };
+        Insert: {
+          id?: string;
+          recipient: string;
+          subject: string;
+          type: string;
+          sent_at?: string;
+        };
+        Update: {
+          id?: string;
+          recipient?: string;
+          subject?: string;
+          type?: string;
+          sent_at?: string;
+        };
+      };
+      mileage_logs: {
+        Row: {
+          id: string;
+          user_id: string;
+          date: string;
+          start_location: string;
+          end_location: string;
+          business_purpose: string;
+          start_odometer: string;
+          end_odometer: string;
+          total_miles: number;
+          country: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          date: string;
+          start_location: string;
+          end_location: string;
+          business_purpose: string;
+          start_odometer?: string;
+          end_odometer?: string;
+          total_miles?: number;
+          country?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          date?: string;
+          start_location?: string;
+          end_location?: string;
+          business_purpose?: string;
+          start_odometer?: string;
+          end_odometer?: string;
+          total_miles?: number;
+          country?: string;
+          created_at?: string;
         };
       };
     };
