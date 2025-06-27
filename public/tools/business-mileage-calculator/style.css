@@ -1,0 +1,290 @@
+/* Business Mileage Calculator Specific Styles */
+
+.rate-display {
+    margin-top: 1rem;
+}
+
+.rate-badge {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-weight: 600;
+    font-size: 0.875rem;
+}
+
+.help-icon {
+    cursor: help;
+    margin-left: 0.25rem;
+    opacity: 0.7;
+}
+
+.help-text {
+    color: var(--gray-500);
+    font-size: 0.75rem;
+    margin-top: 0.25rem;
+    display: block;
+}
+
+.calculation-breakdown {
+    background: var(--gray-50);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin: 2rem 0;
+}
+
+.breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem 0;
+    border-bottom: 1px solid var(--gray-200);
+}
+
+.breakdown-item:last-child {
+    border-bottom: none;
+}
+
+.breakdown-item.total {
+    font-weight: 700;
+    font-size: 1.125rem;
+    border-top: 2px solid var(--primary-color);
+    margin-top: 0.5rem;
+    padding-top: 1rem;
+}
+
+.tax-savings-section {
+    background: linear-gradient(135deg, #f0f9ff, #e0f2fe);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin: 2rem 0;
+    border-left: 4px solid var(--success-color);
+}
+
+.tax-brackets {
+    display: grid;
+    gap: 0.5rem;
+    margin: 1rem 0;
+}
+
+.bracket-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.5rem;
+    background: white;
+    border-radius: 4px;
+    font-weight: 500;
+}
+
+.help-section {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 2rem;
+    margin: 2rem 0;
+}
+
+.help-card {
+    background: var(--gray-50);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+}
+
+.help-card h3 {
+    color: var(--primary-color);
+    margin-bottom: 1rem;
+}
+
+.help-card ul {
+    list-style: none;
+    padding: 0;
+}
+
+.help-card li {
+    padding: 0.25rem 0;
+    position: relative;
+    padding-left: 1.5rem;
+}
+
+.help-card li::before {
+    content: "✓";
+    position: absolute;
+    left: 0;
+    color: var(--success-color);
+    font-weight: bold;
+}
+
+.irs-reference {
+    background: var(--gray-50);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    margin-top: 2rem;
+    border-left: 4px solid var(--warning-color);
+}
+
+.irs-reference a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.irs-reference a:hover {
+    text-decoration: underline;
+}
+
+.related-tools-section {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--shadow);
+    padding: 2rem;
+    margin: 2rem 0;
+}
+
+.related-tools-section h3 {
+    text-align: center;
+    margin-bottom: 2rem;
+    color: var(--gray-800);
+}
+
+.related-tools-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 1.5rem;
+}
+
+.related-tool-card {
+    background: var(--gray-50);
+    border-radius: var(--border-radius);
+    padding: 1.5rem;
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.2s;
+    border: 1px solid var(--gray-200);
+    text-align: center;
+}
+
+.related-tool-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--primary-color);
+}
+
+.related-tool-card .tool-icon {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.related-tool-card h4 {
+    color: var(--gray-800);
+    margin-bottom: 0.5rem;
+    font-size: 1.125rem;
+}
+
+.related-tool-card p {
+    color: var(--gray-600);
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+}
+
+.cta-button {
+    display: inline-block;
+    background: var(--primary-color);
+    color: white;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.related-tool-card:hover .cta-button {
+    background: var(--secondary-color);
+}
+
+.tool-footer {
+    background: var(--gray-800);
+    color: var(--gray-200);
+    padding: 2rem 0;
+    margin-top: 4rem;
+    text-align: center;
+}
+
+.tool-footer p {
+    margin-bottom: 0.5rem;
+}
+
+.disclaimer {
+    font-size: 0.75rem;
+    color: var(--gray-500);
+    font-style: italic;
+}
+
+.error-message {
+    color: var(--error-color);
+    font-size: 0.875rem;
+    margin-top: 0.25rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .rate-badge {
+        font-size: 0.75rem;
+        padding: 0.375rem 0.75rem;
+    }
+    
+    .breakdown-item {
+        font-size: 0.875rem;
+    }
+    
+    .related-tools-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .tax-brackets {
+        font-size: 0.875rem;
+    }
+}
+
+/* Print Styles */
+@media print {
+    .export-buttons,
+    .related-tools-section,
+    .help-section {
+        display: none;
+    }
+    
+    .tool-header {
+        background: none;
+        color: black;
+    }
+    
+    .rate-badge {
+        background: var(--gray-200);
+        color: black;
+    }
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    .help-card li::before {
+        content: "• ";
+        color: black;
+    }
+    
+    .related-tool-card {
+        border: 2px solid black;
+    }
+    
+    .cta-button {
+        border: 1px solid white;
+    }
+}
+
+/* Keyboard Navigation */
+.keyboard-navigation .related-tool-card:focus {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
+}
+
+.keyboard-navigation .btn:focus {
+    outline: 3px solid var(--primary-color);
+    outline-offset: 2px;
+}

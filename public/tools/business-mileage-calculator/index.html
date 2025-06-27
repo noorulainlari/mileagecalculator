@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Business Mileage Calculator 2025 - IRS Compliant Tax Deduction Tool</title>
+    <meta name="description" content="Calculate your business mileage tax deductions for 2025 using official IRS rates. Free calculator with PDF export and audit-proof documentation.">
+    <meta name="keywords" content="business mileage calculator, IRS mileage deduction, business travel tax, 2025 mileage rates, tax calculator">
+    
+    <!-- Open Graph -->
+    <meta property="og:title" content="Business Mileage Calculator 2025 - IRS Tax Deduction Tool">
+    <meta property="og:description" content="Calculate business mileage deductions with official 2025 IRS rates. Free tool with PDF export.">
+    <meta property="og:type" content="website">
+    
+    <link rel="stylesheet" href="../shared/styles.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="canonical" href="https://irs2025mileagecalculator.com/tools/business-mileage-calculator/">
+</head>
+<body>
+    <header class="tool-header">
+        <div class="container">
+            <h1>Business Mileage Calculator 2025</h1>
+            <p>Calculate your business travel tax deductions using official IRS rates</p>
+            <div class="rate-display">
+                <span class="rate-badge">2025 IRS Rate: $0.70 per mile</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container">
+        <!-- Calculator Form -->
+        <section class="tool-form">
+            <h2>Enter Your Business Travel Information</h2>
+            
+            <form id="mileageForm" novalidate>
+                <div class="grid grid-2">
+                    <div class="form-group">
+                        <label for="totalMiles" class="form-label">
+                            Total Business Miles *
+                            <span class="help-icon" title="Enter the total miles driven for business purposes">ℹ️</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            id="totalMiles" 
+                            class="form-input" 
+                            placeholder="Enter miles driven"
+                            min="0"
+                            step="0.1"
+                            required
+                            aria-describedby="totalMiles-help"
+                        >
+                        <small id="totalMiles-help" class="help-text">Include all business-related travel, excluding commuting</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="businessPurpose" class="form-label">
+                            Primary Business Purpose
+                        </label>
+                        <select id="businessPurpose" class="form-select">
+                            <option value="">Select purpose</option>
+                            <option value="client-meetings">Client Meetings</option>
+                            <option value="business-travel">Business Travel</option>
+                            <option value="conferences">Conferences/Training</option>
+                            <option value="deliveries">Deliveries</option>
+                            <option value="site-visits">Site Visits</option>
+                            <option value="networking">Networking Events</option>
+                            <option value="other">Other Business Purpose</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="startDate" class="form-label">Period Start Date</label>
+                        <input type="date" id="startDate" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="endDate" class="form-label">Period End Date</label>
+                        <input type="date" id="endDate" class="form-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="vehicleType" class="form-label">Vehicle Type</label>
+                        <select id="vehicleType" class="form-select">
+                            <option value="car">Car</option>
+                            <option value="truck">Truck</option>
+                            <option value="van">Van</option>
+                            <option value="suv">SUV</option>
+                            <option value="motorcycle">Motorcycle</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="reimbursement" class="form-label">
+                            Employer Reimbursement
+                            <span class="help-icon" title="Amount reimbursed by employer (reduces deduction)">ℹ️</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            id="reimbursement" 
+                            class="form-input" 
+                            placeholder="0.00"
+                            min="0"
+                            step="0.01"
+                        >
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="notes" class="form-label">Additional Notes (Optional)</label>
+                    <textarea 
+                        id="notes" 
+                        class="form-textarea" 
+                        placeholder="Add any additional details about your business travel..."
+                        rows="3"
+                    ></textarea>
+                </div>
+
+                <button type="submit" class="btn btn-primary btn-lg">
+                    Calculate Deduction
+                </button>
+            </form>
+        </section>
+
+        <!-- Results Section -->
+        <section id="resultsSection" class="results-section" style="display: none;">
+            <h2>Your Business Mileage Deduction</h2>
+            
+            <div class="grid grid-2">
+                <div class="result-card">
+                    <div class="result-value" id="totalDeduction">$0.00</div>
+                    <div class="result-label">Total Tax Deduction</div>
+                </div>
+                
+                <div class="result-card">
+                    <div class="result-value" id="netDeduction">$0.00</div>
+                    <div class="result-label">Net Deduction (After Reimbursement)</div>
+                </div>
+            </div>
+
+            <div class="calculation-breakdown">
+                <h3>Calculation Breakdown</h3>
+                <div class="breakdown-item">
+                    <span>Business Miles:</span>
+                    <span id="breakdownMiles">0</span>
+                </div>
+                <div class="breakdown-item">
+                    <span>IRS Rate (2025):</span>
+                    <span>$0.70 per mile</span>
+                </div>
+                <div class="breakdown-item">
+                    <span>Gross Deduction:</span>
+                    <span id="breakdownGross">$0.00</span>
+                </div>
+                <div class="breakdown-item">
+                    <span>Employer Reimbursement:</span>
+                    <span id="breakdownReimbursement">$0.00</span>
+                </div>
+                <div class="breakdown-item total">
+                    <span>Net Tax Deduction:</span>
+                    <span id="breakdownNet">$0.00</span>
+                </div>
+            </div>
+
+            <!-- Export Options -->
+            <div class="export-buttons">
+                <button id="exportPDF" class="btn btn-secondary">
+                    📄 Download PDF Report
+                </button>
+                <button id="exportExcel" class="btn btn-secondary">
+                    📊 Export to Excel
+                </button>
+                <button id="printResults" class="btn btn-secondary">
+                    🖨️ Print Results
+                </button>
+                <button id="emailResults" class="btn btn-secondary">
+                    📧 Email Results
+                </button>
+            </div>
+
+            <!-- Tax Savings Estimate -->
+            <div class="tax-savings-section">
+                <h3>Estimated Tax Savings</h3>
+                <p>Based on common tax brackets, your potential tax savings could be:</p>
+                <div class="tax-brackets">
+                    <div class="bracket-item">
+                        <span>22% Tax Bracket:</span>
+                        <span id="savings22">$0.00</span>
+                    </div>
+                    <div class="bracket-item">
+                        <span>24% Tax Bracket:</span>
+                        <span id="savings24">$0.00</span>
+                    </div>
+                    <div class="bracket-item">
+                        <span>32% Tax Bracket:</span>
+                        <span id="savings32">$0.00</span>
+                    </div>
+                </div>
+                <small class="disclaimer">*Actual savings depend on your specific tax situation. Consult a tax professional.</small>
+            </div>
+        </section>
+
+        <!-- Help Section -->
+        <section class="help-section">
+            <h2>Business Mileage Deduction Guide</h2>
+            
+            <div class="grid grid-2">
+                <div class="help-card">
+                    <h3>What Qualifies as Business Mileage?</h3>
+                    <ul>
+                        <li>Travel between work locations</li>
+                        <li>Client meetings and site visits</li>
+                        <li>Business conferences and training</li>
+                        <li>Business errands (bank, supplies, etc.)</li>
+                        <li>Temporary work assignments</li>
+                    </ul>
+                </div>
+                
+                <div class="help-card">
+                    <h3>What Does NOT Qualify?</h3>
+                    <ul>
+                        <li>Regular commuting to work</li>
+                        <li>Personal errands or travel</li>
+                        <li>Travel between home and regular workplace</li>
+                        <li>Personal use of company vehicle</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="irs-reference">
+                <h3>IRS Reference</h3>
+                <p>This calculator uses the official IRS standard mileage rate for 2025. For complete details, see <a href="https://www.irs.gov/newsroom/irs-issues-standard-mileage-rates-for-2025" target="_blank" rel="noopener">IRS Publication 463</a> and the latest IRS announcements.</p>
+            </div>
+        </section>
+
+        <!-- Related Tools -->
+        <section id="relatedTools" class="related-tools-container">
+            <!-- Related tools will be populated by JavaScript -->
+        </section>
+    </main>
+
+    <footer class="tool-footer">
+        <div class="container">
+            <p><strong>Disclaimer:</strong> This tool is for informational purposes only and does not constitute tax advice. Please consult with a qualified tax professional for advice regarding your specific tax situation.</p>
+            <p>© 2025 IRS Mileage Calculator. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="../shared/common.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>

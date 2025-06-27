@@ -9,12 +9,15 @@ interface EmailData {
 
 export const sendEmail = async (emailData: EmailData) => {
   try {
-    // In a real implementation, this would call an edge function
-    // For now, we'll simulate the email sending
-    console.log('Sending email:', emailData);
-    
-    // Log the email in Supabase
-    const { error } = await supabase
+    // Call the edge function
+    const { data, error } = await supabase.functions.invoke('send-email', {
+      body: emailData
+    });
+
+    if (error) throw error;
+
+    // Log the email in our database
+    const { error: logError } = await supabase
       .from('email_logs')
       .insert([
         {
@@ -25,9 +28,9 @@ export const sendEmail = async (emailData: EmailData) => {
         }
       ]);
 
-    if (error) throw error;
+    if (logError) console.error('Error logging email:', logError);
     
-    return { success: true };
+    return { success: true, data };
   } catch (error) {
     console.error('Email sending failed:', error);
     return { success: false, error };

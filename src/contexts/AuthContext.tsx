@@ -34,7 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        checkAdminStatus(session.user.id);
+        checkAdminStatus(session.user.email);
       }
       setLoading(false);
     });
@@ -46,7 +46,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       setSession(session);
       setUser(session?.user ?? null);
       if (session?.user) {
-        checkAdminStatus(session.user.id);
+        checkAdminStatus(session.user.email);
       } else {
         setIsAdmin(false);
       }
@@ -56,16 +56,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const checkAdminStatus = async (userId: string) => {
+  const checkAdminStatus = async (email: string | undefined) => {
+    if (!email) {
+      setIsAdmin(false);
+      return;
+    }
+
     try {
       const { data } = await supabase
         .from('users')
-        .select('is_admin')
-        .eq('id', userId)
+        .select('role')
+        .eq('email', email)
         .single();
       
-      setIsAdmin(data?.is_admin || false);
+      setIsAdmin(data?.role === 'admin');
     } catch (error) {
+      console.error('Error checking admin status:', error);
       setIsAdmin(false);
     }
   };
@@ -80,10 +86,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Create user profile
       await supabase.from('users').insert([
         {
-          id: data.user.id,
-          name,
           email,
-          is_admin: false,
+          password: '', // Don't store password in our table
+          role: 'user',
         },
       ]);
     }
